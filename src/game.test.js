@@ -43,6 +43,17 @@ describe('questions', () => {
     }
   });
 
+  it('keeps Combo hidden when stock, strike, and r/c are all displayed', () => {
+    for (let index = 0; index < 100; index += 1) {
+      const q = generateQuestion(['combo']);
+      const labels = q.fields.map((field) => field.label);
+      if (labels.includes('Stock') && labels.includes('Strike') && labels.includes('r/c')) {
+        expect(labels).not.toContain('Combo');
+        expect(q.answerLabel).toBe('Combo');
+      }
+    }
+  });
+
   it('rejects malformed answers and accepts equivalent decimal input', () => {
     expect(parseCents('12.5')).toBe(1250);
     expect(parseCents('.27')).toBe(27);

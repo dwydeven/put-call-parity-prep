@@ -34,9 +34,9 @@ function Setup({ settings, setSettings, start }) {
 function Game({ settings, finish }) {
   const [current, setCurrent] = useState(() => generateQuestion(settings.categories));
   const [input, setInput] = useState('');
-  const [stats, setStats] = useState({ score: 0, attempted: 1, correct: 0, shown: 0 });
+  const [stats, setStats] = useState({ score: 0, attempted: 0, correct: 0, shown: 0 });
   const [remaining, setRemaining] = useState(settings.duration);
-  const [revealing, setRevealing] = useState(false);
+  const [answerShown, setAnswerShown] = useState(false);
   const [formulaVisible, setFormulaVisible] = useState(false);
   const inputRef = useRef(null);
   const advancing = useRef(false);
@@ -48,21 +48,27 @@ function Game({ settings, finish }) {
     return () => window.clearTimeout(timer);
   }, [remaining, stats, finish]);
 
-  const next = (correct) => {
+  const nextQuestion = () => {
     if (advancing.current) return;
     advancing.current = true;
-    setStats((old) => ({ score: old.score + (correct ? 1 : 0), correct: old.correct + (correct ? 1 : 0), shown: old.shown + (correct ? 0 : 1), attempted: old.attempted + 1 }));
     setCurrent(generateQuestion(settings.categories));
     setInput('');
     setFormulaVisible(false);
+    setAnswerShown(false);
     window.setTimeout(() => { advancing.current = false; }, 0);
   };
-  const change = (value) => { setInput(value); if (!revealing && parseCents(value) === current.answer) next(true); };
+  const change = (value) => {
+    setInput(value);
+    if (!answerShown && parseCents(value) === current.answer) {
+      setStats((old) => ({ ...old, score: old.score + 1, correct: old.correct + 1, attempted: old.attempted + 1 }));
+      nextQuestion();
+    }
+  };
   const showAnswer = () => {
-    if (revealing) return;
-    setRevealing(true);
+    if (answerShown) return;
+    setAnswerShown(true);
     setInput((current.answer / 100).toFixed(2));
-    window.setTimeout(() => { setRevealing(false); next(false); }, 850);
+    setStats((old) => ({ ...old, shown: old.shown + 1, attempted: old.attempted + 1 }));
   };
   const minutes = Math.floor(remaining / 60); const seconds = String(remaining % 60).padStart(2, '0');
   return <main className="card game-card">
@@ -71,12 +77,12 @@ function Game({ settings, finish }) {
     <div className="values"><div className="value target-value"><span>Target</span><strong>{current.answerLabel} = ?</strong></div>{current.fields.map(({ label, value }) => <div className="value" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
     <div className="formula-control"><button className="formula-button" onClick={() => setFormulaVisible((visible) => !visible)}>{formulaVisible ? 'Hide Formula' : 'Show Formula'}</button>{formulaVisible && <p className="formula">{current.formula}</p>}</div>
     <label className="answer-label">{current.answerLabel}<input ref={inputRef} aria-label={`Answer for ${current.answerLabel}`} inputMode="decimal" autoComplete="off" value={input} onChange={(event) => change(event.target.value)} /></label>
-    <button className="secondary answer-button" onClick={showAnswer} disabled={revealing}>{revealing ? `Answer: ${money(current.answer, current.answerLabel === 'r/c')}` : 'Show Answer'}</button>
+    <button className="secondary answer-button" onClick={answerShown ? nextQuestion : showAnswer}>{answerShown ? 'Next Question' : 'Show Answer'}</button>
   </main>;
 }
 
 function Results({ stats, restart }) {
-  return <main className="card results-card"><p className="eyebrow">TIME'S UP</p><h1>{stats.score} correct</h1><p className="subtitle">You completed {stats.correct} correct solves from {stats.attempted - 1} questions.</p><div className="results-grid"><div><span>Correct</span><strong>{stats.correct}</strong></div><div><span>Answers shown</span><strong>{stats.shown}</strong></div></div><button className="primary" onClick={restart}>Play again</button></main>;
+  return <main className="card results-card"><p className="eyebrow">TIME'S UP</p><h1>{stats.score} correct</h1><p className="subtitle">You completed {stats.correct} correct solves from {stats.attempted} questions.</p><div className="results-grid"><div><span>Correct</span><strong>{stats.correct}</strong></div><div><span>Answers shown</span><strong>{stats.shown}</strong></div></div><button className="primary" onClick={restart}>Play again</button></main>;
 }
 
 export default function App() {

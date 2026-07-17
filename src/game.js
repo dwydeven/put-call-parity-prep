@@ -90,7 +90,9 @@ export function generateQuestion(enabled, random = Math.random) {
   const blank = category === 'putCall'
     ? pick(['put', 'call', 'stock', 'strike', 'rc'], random)
     : category === 'combo'
-      ? pick(['combo', 'stock', 'call', 'put'], random)
+      // Combo is primarily an arithmetic target. It is only displayed for
+      // the less-common stock reconstruction drill, never beside S, K, r/c.
+      ? (random() < 0.8 ? 'combo' : 'stock')
       : category === 'straddle'
         ? pick(['straddle', 'call', 'put'], random)
         : pick(['strategy', 'put', 'call'], random);
@@ -111,10 +113,8 @@ export function generateQuestion(enabled, random = Math.random) {
   if (category === 'combo') {
     const value = combo(market);
     const templates = {
-      combo: ['Combo', value, [field('Stock', S), field('Strike', K), field('Put', P), field('Call', C), field('r/c', rc)]],
-      stock: ['Stock', S, [field('Combo', value), field('Strike', K), field('Put', P), field('Call', C), field('r/c', rc)]],
-      call: ['Call', C, [field('Combo', value), field('Stock', S), field('Strike', K), field('Put', P), field('r/c', rc)]],
-      put: ['Put', P, [field('Combo', value), field('Stock', S), field('Strike', K), field('Call', C), field('r/c', rc)]],
+      combo: ['Combo', value, [field('Stock', S), field('Strike', K), field('r/c', rc)]],
+      stock: ['Stock', S, [field('Combo', value), field('Strike', K), field('r/c', rc)]],
     };
     const [answerLabel, answer, fields] = templates[blank];
     return question(category, 'Combo', `Solve for ${answerLabel}.`, fields, answer, answerLabel, 'Combo = C − P = S − K + r/c');
