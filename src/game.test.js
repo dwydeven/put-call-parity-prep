@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CATEGORIES, assertMarket, bw, combo, generateQuestion, makeMarket, parseCents, ps, straddle } from './game';
+import { CATEGORIES, assertMarket, blackScholes, bw, combo, generateQuestion, makeMarket, normalCdf, parseCents, ps, straddle } from './game';
 
 const seeded = (values) => { let index = 0; return () => values[index++ % values.length]; };
 
@@ -9,7 +9,17 @@ describe('market generation', () => {
       const market = makeMarket();
       expect(assertMarket(market)).toBe(true);
       expect(market.strike % 25).toBe(0);
+      expect(Math.abs(market.stock - market.strike)).toBeLessThanOrEqual(5000);
+      expect(market.rc).toBeGreaterThan(0);
+      expect(market.rc).toBeLessThanOrEqual(500);
     }
+  });
+
+  it('prices a known Black-Scholes contract', () => {
+    const option = blackScholes({ stock: 100, strike: 100, rate: 0.05, volatility: 0.2, years: 1 });
+    expect(option.call).toBeCloseTo(10.4506, 3);
+    expect(option.put).toBeCloseTo(5.5735, 3);
+    expect(normalCdf(0)).toBeCloseTo(0.5, 6);
   });
 
   it('maintains every derivative identity', () => {
