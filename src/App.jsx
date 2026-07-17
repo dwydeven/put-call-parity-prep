@@ -37,6 +37,7 @@ function Game({ settings, finish }) {
   const [stats, setStats] = useState({ score: 0, attempted: 1, correct: 0, shown: 0 });
   const [remaining, setRemaining] = useState(settings.duration);
   const [revealing, setRevealing] = useState(false);
+  const [formulaVisible, setFormulaVisible] = useState(false);
   const inputRef = useRef(null);
   const advancing = useRef(false);
 
@@ -53,6 +54,7 @@ function Game({ settings, finish }) {
     setStats((old) => ({ score: old.score + (correct ? 1 : 0), correct: old.correct + (correct ? 1 : 0), shown: old.shown + (correct ? 0 : 1), attempted: old.attempted + 1 }));
     setCurrent(generateQuestion(settings.categories));
     setInput('');
+    setFormulaVisible(false);
     window.setTimeout(() => { advancing.current = false; }, 0);
   };
   const change = (value) => { setInput(value); if (!revealing && parseCents(value) === current.answer) next(true); };
@@ -65,9 +67,9 @@ function Game({ settings, finish }) {
   const minutes = Math.floor(remaining / 60); const seconds = String(remaining % 60).padStart(2, '0');
   return <main className="card game-card">
     <header className="game-header"><div><span className="stat-label">TIME</span><strong>{minutes}:{seconds}</strong></div><div><span className="stat-label">SCORE</span><strong>{stats.score}</strong></div></header>
-    <p className="eyebrow">{current.title}</p><h1>{current.prompt}</h1>
-    <div className="values">{current.fields.map(({ label, value }) => <div className="value" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
-    <p className="formula">{current.formula}</p>
+    <p className="eyebrow">{current.title}</p>
+    <div className="values"><div className="value target-value"><span>Target</span><strong>{current.answerLabel} = ?</strong></div>{current.fields.map(({ label, value }) => <div className="value" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
+    <div className="formula-control"><button className="formula-button" onClick={() => setFormulaVisible((visible) => !visible)}>{formulaVisible ? 'Hide Formula' : 'Show Formula'}</button>{formulaVisible && <p className="formula">{current.formula}</p>}</div>
     <label className="answer-label">{current.answerLabel}<input ref={inputRef} aria-label={`Answer for ${current.answerLabel}`} inputMode="decimal" autoComplete="off" value={input} onChange={(event) => change(event.target.value)} /></label>
     <button className="secondary answer-button" onClick={showAnswer} disabled={revealing}>{revealing ? `Answer: ${money(current.answer, current.answerLabel === 'r/c')}` : 'Show Answer'}</button>
   </main>;

@@ -40,7 +40,10 @@ code { padding: 1px 4px; border-radius: 3px; background: #edf0e9; color: #185443
 .value { min-height: 71px; display: grid; align-content: center; gap: 4px; padding: 12px 14px; background: #fffefa; }
 .value span, .results-grid span { color: #727970; font-size: .72rem; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; }
 .value strong { font-size: 1.13rem; font-variant-numeric: tabular-nums; }
-.formula { margin: 0 0 26px; color: #5e6963; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .83rem; }
+.target-value { background: #f2f7f2; }
+.formula-control { margin: 0 0 26px; }
+.formula-button { padding: 0; border: 0; color: #46635a; background: transparent; font-size: .79rem; font-weight: 750; text-decoration: underline; }
+.formula { margin: 10px 0 0; color: #5e6963; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .83rem; }
 .answer-label { display: grid; gap: 7px; color: #42504a; font-size: .82rem; font-weight: 750; }
 .answer-label input { width: 100%; padding: 13px 14px; border: 2px solid #6a877c; border-radius: 4px; outline: none; color: #15211d; font-size: 1.45rem; font-variant-numeric: tabular-nums; }
 .answer-label input:focus { border-color: #1f6655; box-shadow: 0 0 0 3px rgba(31, 102, 85, .13); }

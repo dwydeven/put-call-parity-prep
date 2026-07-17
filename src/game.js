@@ -144,7 +144,7 @@ export function generateQuestion(enabled, random = Math.random) {
 
 export function parseCents(input) {
   const trimmed = input.trim();
-  if (!/^[+-]?\d+(?:\.\d{0,2})?$/.test(trimmed)) return null;
+  if (!/^[+-]?(?:\d+(?:\.\d{0,2})?|\.\d{1,2})$/.test(trimmed)) return null;
   const negative = trimmed.startsWith('-');
   const body = trimmed.replace(/^[+-]/, '');
   const [whole, fraction = ''] = body.split('.');

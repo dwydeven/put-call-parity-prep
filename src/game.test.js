@@ -45,6 +45,8 @@ describe('questions', () => {
 
   it('rejects malformed answers and accepts equivalent decimal input', () => {
     expect(parseCents('12.5')).toBe(1250);
+    expect(parseCents('.27')).toBe(27);
+    expect(parseCents('-.27')).toBe(-27);
     expect(parseCents('-0.25')).toBe(-25);
     expect(parseCents('12.345')).toBeNull();
     expect(parseCents('')).toBeNull();
