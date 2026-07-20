@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { CATEGORIES, generateQuestion, money, parseCents } from './game';
-
-const DURATIONS = [30, 60, 120, 300, 600];
-const initialSettings = { categories: CATEGORIES.map(({ id }) => id), duration: 600 };
+import { DURATIONS, QUESTION_COUNTS, initialSettings, isQuestionRoundComplete } from './round';
 
 function HowToPlay({ close }) {
   return <div className="modal-backdrop" role="presentation" onMouseDown={close}>
@@ -13,7 +11,7 @@ function HowToPlay({ close }) {
       <p>Use put-call parity to solve the one missing price. Enter dollar decimals (for example, <code>12.50</code>); the next drill appears the instant your answer is correct.</p>
       <p><code>C − P = S − K + r/c</code></p>
       <p><strong>r/c</strong> is signed exactly as shown. Other identities: <code>Combo = C − P</code>, <code>Straddle = C + P</code>, <code>B/W = S − C − K</code>, and <code>P+S = P + S − K</code>.</p>
-      <p>“Show answer” moves on without a point. Try to make as many correct solves as you can before the clock ends.</p>
+      <p>“Show answer” consumes the current question without awarding a point. Choose a timed round to solve against the clock, or a question round to complete a fixed number of questions.</p>
     </section>
   </div>;
 }
@@ -34,7 +32,7 @@ function InstallHelp({ close, offlineReady }) {
   </div>;
 }
 
-function Setup({ settings, setSettings, start, standalone, offlineReady }) {
+export function Setup({ settings, setSettings, start, standalone, offlineReady }) {
   const [showHelp, setShowHelp] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
   const toggle = (id) => setSettings((current) => ({ ...current, categories: current.categories.includes(id) ? current.categories.filter((category) => category !== id) : [...current.categories, id] }));
@@ -44,18 +42,25 @@ function Setup({ settings, setSettings, start, standalone, offlineReady }) {
     <p className="subtitle">A put-call parity speed drill.</p>
     {!standalone && <button className="install-link" onClick={() => setShowInstall(true)}>Install on iPhone</button>}
     <fieldset><legend>Question types</legend>{CATEGORIES.map(({ id, label }) => <label className="check-row" key={id}><input type="checkbox" checked={settings.categories.includes(id)} onChange={() => toggle(id)} />{label}</label>)}</fieldset>
-    <label className="duration">Duration<select value={settings.duration} onChange={(event) => setSettings((current) => ({ ...current, duration: Number(event.target.value) }))}>{DURATIONS.map((seconds) => <option key={seconds} value={seconds}>{seconds} seconds</option>)}</select></label>
+    <fieldset className="round-format"><legend>Round format</legend><div className="format-toggle">
+      <button type="button" aria-pressed={settings.mode === 'timed'} className={settings.mode === 'timed' ? 'is-active' : ''} onClick={() => setSettings((current) => ({ ...current, mode: 'timed' }))}>Timed</button>
+      <button type="button" aria-pressed={settings.mode === 'questions'} className={settings.mode === 'questions' ? 'is-active' : ''} onClick={() => setSettings((current) => ({ ...current, mode: 'questions' }))}>Questions</button>
+    </div></fieldset>
+    {settings.mode === 'timed'
+      ? <label className="round-length">Duration<select value={settings.duration} onChange={(event) => setSettings((current) => ({ ...current, duration: Number(event.target.value) }))}>{DURATIONS.map((seconds) => <option key={seconds} value={seconds}>{seconds} seconds</option>)}</select></label>
+      : <label className="round-length">Number of questions<select value={settings.questionCount} onChange={(event) => setSettings((current) => ({ ...current, questionCount: Number(event.target.value) }))}>{QUESTION_COUNTS.map((count) => <option key={count} value={count}>{count} questions</option>)}</select></label>}
     <div className="button-row"><button className="secondary" onClick={() => setShowHelp(true)}>How to Play</button><button className="primary" onClick={start} disabled={!settings.categories.length}>Start</button></div>
     {showHelp && <HowToPlay close={() => setShowHelp(false)} />}
     {showInstall && <InstallHelp close={() => setShowInstall(false)} offlineReady={offlineReady} />}
   </main>;
 }
 
-function Game({ settings, finish }) {
+export function Game({ settings, finish }) {
   const [current, setCurrent] = useState(() => generateQuestion(settings.categories));
   const [input, setInput] = useState('');
   const [stats, setStats] = useState({ score: 0, attempted: 0, correct: 0, shown: 0 });
   const [remaining, setRemaining] = useState(settings.duration);
+  const [questionNumber, setQuestionNumber] = useState(1);
   const [answerShown, setAnswerShown] = useState(false);
   const [formulaVisible, setFormulaVisible] = useState(false);
   const inputRef = useRef(null);
@@ -63,10 +68,11 @@ function Game({ settings, finish }) {
 
   useEffect(() => { inputRef.current?.focus(); }, [current]);
   useEffect(() => {
+    if (settings.mode !== 'timed') return undefined;
     if (remaining <= 0) { finish(stats); return undefined; }
     const timer = window.setTimeout(() => setRemaining((value) => value - 1), 1000);
     return () => window.clearTimeout(timer);
-  }, [remaining, stats, finish]);
+  }, [remaining, settings.mode, stats, finish]);
 
   const nextQuestion = () => {
     if (advancing.current) return;
@@ -75,13 +81,17 @@ function Game({ settings, finish }) {
     setInput('');
     setFormulaVisible(false);
     setAnswerShown(false);
+    setQuestionNumber((number) => number + 1);
     window.setTimeout(() => { advancing.current = false; }, 0);
   };
   const change = (value) => {
+    if (advancing.current) return;
     setInput(value);
     if (!answerShown && parseCents(value) === current.answer) {
-      setStats((old) => ({ ...old, score: old.score + 1, correct: old.correct + 1, attempted: old.attempted + 1 }));
-      nextQuestion();
+      const nextStats = { ...stats, score: stats.score + 1, correct: stats.correct + 1, attempted: stats.attempted + 1 };
+      setStats(nextStats);
+      if (isQuestionRoundComplete(settings, nextStats)) finish(nextStats);
+      else nextQuestion();
     }
   };
   const showAnswer = () => {
@@ -90,19 +100,23 @@ function Game({ settings, finish }) {
     setInput((current.answer / 100).toFixed(2));
     setStats((old) => ({ ...old, shown: old.shown + 1, attempted: old.attempted + 1 }));
   };
+  const advanceAfterReveal = () => {
+    if (isQuestionRoundComplete(settings, stats)) finish(stats);
+    else nextQuestion();
+  };
   const minutes = Math.floor(remaining / 60); const seconds = String(remaining % 60).padStart(2, '0');
   return <main className="card game-card">
-    <header className="game-header"><div><span className="stat-label">TIME</span><strong>{minutes}:{seconds}</strong></div><div><span className="stat-label">SCORE</span><strong>{stats.score}</strong></div></header>
+    <header className="game-header"><div><span className="stat-label">{settings.mode === 'timed' ? 'TIME' : 'QUESTION'}</span><strong>{settings.mode === 'timed' ? `${minutes}:${seconds}` : `${questionNumber} / ${settings.questionCount}`}</strong></div><div><span className="stat-label">SCORE</span><strong>{stats.score}</strong></div></header>
     <p className="eyebrow">{current.title}</p>
     <div className="values"><div className="value target-value"><span>Target</span><strong>{current.answerLabel} = ?</strong></div>{current.fields.map(({ label, value }) => <div className="value" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
     <div className="formula-control"><button className="formula-button" onClick={() => setFormulaVisible((visible) => !visible)}>{formulaVisible ? 'Hide Formula' : 'Show Formula'}</button>{formulaVisible && <p className="formula">{current.formula}</p>}</div>
     <label className="answer-label">{current.answerLabel}<input ref={inputRef} aria-label={`Answer for ${current.answerLabel}`} inputMode="decimal" autoComplete="off" value={input} onChange={(event) => change(event.target.value)} /></label>
-    <button className="secondary answer-button" onClick={answerShown ? nextQuestion : showAnswer}>{answerShown ? 'Next Question' : 'Show Answer'}</button>
+    <button className="secondary answer-button" onClick={answerShown ? advanceAfterReveal : showAnswer}>{answerShown ? (isQuestionRoundComplete(settings, stats) ? 'Finish' : 'Next Question') : 'Show Answer'}</button>
   </main>;
 }
 
-function Results({ stats, restart }) {
-  return <main className="card results-card"><p className="eyebrow">TIME'S UP</p><h1>{stats.score} correct</h1><p className="subtitle">You completed {stats.correct} correct solves from {stats.attempted} questions.</p><div className="results-grid"><div><span>Correct</span><strong>{stats.correct}</strong></div><div><span>Answers shown</span><strong>{stats.shown}</strong></div></div><button className="primary" onClick={restart}>Play again</button></main>;
+export function Results({ stats, restart }) {
+  return <main className="card results-card"><p className="eyebrow">{stats.mode === 'timed' ? "TIME'S UP" : 'ROUND COMPLETE'}</p><h1>{stats.score} correct</h1><p className="subtitle">You completed {stats.correct} correct solves from {stats.attempted} questions.</p><div className="results-grid"><div><span>Correct</span><strong>{stats.correct}</strong></div><div><span>Answers shown</span><strong>{stats.shown}</strong></div></div><button className="primary" onClick={restart}>Play again</button></main>;
 }
 
 export default function App() {
@@ -126,6 +140,6 @@ export default function App() {
     if (state === 'setup' && needRefresh) updateServiceWorker(true);
   }, [state, needRefresh, updateServiceWorker]);
 
-  const finish = (stats) => { setResults(stats); setState('results'); };
+  const finish = (stats) => { setResults({ ...stats, mode: settings.mode }); setState('results'); };
   return <div className="app-shell">{state === 'setup' && <Setup settings={settings} setSettings={setSettings} start={() => setState('game')} standalone={standalone} offlineReady={offlineReady} />}{state === 'game' && <Game settings={settings} finish={finish} />}{state === 'results' && <Results stats={results} restart={() => setState('setup')} />}</div>;
 }
