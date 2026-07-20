@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import { CATEGORIES, generateQuestion, money, parseCents } from './game';
 
 const DURATIONS = [30, 60, 120, 300, 600];
@@ -17,17 +18,36 @@ function HowToPlay({ close }) {
   </div>;
 }
 
-function Setup({ settings, setSettings, start }) {
+function InstallHelp({ close, offlineReady }) {
+  return <div className="modal-backdrop" role="presentation" onMouseDown={close}>
+    <section className="modal" role="dialog" aria-modal="true" aria-labelledby="install-on-iphone" onMouseDown={(event) => event.stopPropagation()}>
+      <button className="icon-button" onClick={close} aria-label="Close">×</button>
+      <h2 id="install-on-iphone">Install on iPhone</h2>
+      <ol className="install-steps">
+        <li>Open this page in Safari while you are online.</li>
+        <li>Tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li>
+        <li>Turn on <strong>Open as Web App</strong>, then tap <strong>Add</strong>.</li>
+      </ol>
+      <p className={`offline-status ${offlineReady ? 'is-ready' : ''}`} role="status">{offlineReady ? 'Ready for offline use.' : 'Keep this page open briefly while the offline copy finishes installing.'}</p>
+      <p>After that, launch Parity Prep from its Home Screen icon—even in Airplane Mode.</p>
+    </section>
+  </div>;
+}
+
+function Setup({ settings, setSettings, start, standalone, offlineReady }) {
   const [showHelp, setShowHelp] = useState(false);
+  const [showInstall, setShowInstall] = useState(false);
   const toggle = (id) => setSettings((current) => ({ ...current, categories: current.categories.includes(id) ? current.categories.filter((category) => category !== id) : [...current.categories, id] }));
   return <main className="card setup-card">
     <p className="eyebrow">OPTIONS MARKET MAKING</p>
     <h1>Parity Prep</h1>
     <p className="subtitle">A put-call parity speed drill.</p>
+    {!standalone && <button className="install-link" onClick={() => setShowInstall(true)}>Install on iPhone</button>}
     <fieldset><legend>Question types</legend>{CATEGORIES.map(({ id, label }) => <label className="check-row" key={id}><input type="checkbox" checked={settings.categories.includes(id)} onChange={() => toggle(id)} />{label}</label>)}</fieldset>
     <label className="duration">Duration<select value={settings.duration} onChange={(event) => setSettings((current) => ({ ...current, duration: Number(event.target.value) }))}>{DURATIONS.map((seconds) => <option key={seconds} value={seconds}>{seconds} seconds</option>)}</select></label>
     <div className="button-row"><button className="secondary" onClick={() => setShowHelp(true)}>How to Play</button><button className="primary" onClick={start} disabled={!settings.categories.length}>Start</button></div>
     {showHelp && <HowToPlay close={() => setShowHelp(false)} />}
+    {showInstall && <InstallHelp close={() => setShowInstall(false)} offlineReady={offlineReady} />}
   </main>;
 }
 
@@ -89,6 +109,23 @@ export default function App() {
   const [settings, setSettings] = useState(initialSettings);
   const [state, setState] = useState('setup');
   const [results, setResults] = useState(null);
+  const [offlineReady, setOfflineReady] = useState(() => Boolean(navigator.serviceWorker?.controller));
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW({ immediate: true });
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return undefined;
+    let active = true;
+    navigator.serviceWorker.ready.then(() => { if (active) setOfflineReady(true); });
+    return () => { active = false; };
+  }, []);
+
+  // Activate a downloaded update only from the setup screen. This prevents a
+  // service-worker refresh from interrupting a timed drill or results review.
+  useEffect(() => {
+    if (state === 'setup' && needRefresh) updateServiceWorker(true);
+  }, [state, needRefresh, updateServiceWorker]);
+
   const finish = (stats) => { setResults(stats); setState('results'); };
-  return <div className="app-shell">{state === 'setup' && <Setup settings={settings} setSettings={setSettings} start={() => setState('game')} />}{state === 'game' && <Game settings={settings} finish={finish} />}{state === 'results' && <Results stats={results} restart={() => setState('setup')} />}</div>;
+  return <div className="app-shell">{state === 'setup' && <Setup settings={settings} setSettings={setSettings} start={() => setState('game')} standalone={standalone} offlineReady={offlineReady} />}{state === 'game' && <Game settings={settings} finish={finish} />}{state === 'results' && <Results stats={results} restart={() => setState('setup')} />}</div>;
 }
