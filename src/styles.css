@@ -13,11 +13,16 @@ h1 { margin: 0; font: 600 clamp(2rem, 7vw, 3.2rem)/1.05 Georgia, "Times New Roma
 .subtitle { margin: 13px 0 32px; color: #68706c; line-height: 1.55; }
 .install-link { min-height: auto; margin: -20px 0 27px; border: 0; padding: 0; color: #1f6655; background: transparent; font-size: .82rem; font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
 fieldset { border: 0; margin: 0 0 26px; padding: 0; }
-legend, .duration { color: #3f4844; font-size: .88rem; font-weight: 700; }
+legend, .round-length { color: #3f4844; font-size: .88rem; font-weight: 700; }
 legend { margin-bottom: 10px; }
 .check-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; color: #273431; }
 input[type="checkbox"] { width: 17px; height: 17px; accent-color: #1f6655; }
-.duration { display: grid; gap: 8px; margin-bottom: 28px; }
+.round-format { margin-bottom: 18px; }
+.format-toggle { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border: 1px solid #bebdb3; border-radius: 6px; background: #f3f1e9; }
+.format-toggle button { min-height: 44px; border: 0; color: #55605b; background: transparent; }
+.format-toggle button.is-active { color: #fff; background: #1f6655; box-shadow: 0 1px 3px rgba(20, 37, 32, .18); }
+.format-toggle button:focus-visible { outline: 3px solid rgba(31, 102, 85, .3); outline-offset: 2px; }
+.round-length { display: grid; gap: 8px; margin-bottom: 28px; }
 select { appearance: auto; width: 100%; padding: 11px 12px; border: 1px solid #bebdb3; border-radius: 4px; color: #21302c; background: #fffefa; }
 .button-row { display: flex; gap: 10px; }
 button { border-radius: 4px; padding: 12px 18px; font-weight: 750; transition: background .15s, transform .15s; }

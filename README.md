@@ -7,10 +7,10 @@ Parity Prep is a lightweight speed-drill game for practicing put-call parity and
 The app currently includes:
 
 - A Zetamac-inspired setup screen with selectable Put-Call, Combo, Straddle, and B/W and P+S drills.
-- Timed rounds of 30, 60, 120, 300, or 600 seconds.
+- Timed rounds of 30, 60, 120, 300, or 600 seconds, or fixed rounds of 5, 10, 20, or 100 questions.
 - Immediate advance and scoring when a correct decimal answer is entered. Both `.27` and `0.27` are accepted.
 - An optional “Show Formula” aid and a “Show Answer” control that advances without awarding a point.
-- A results screen showing correct answers and answers revealed.
+- A results screen showing correct answers and answers revealed. Revealed answers count toward a fixed question total without awarding a point.
 - An installable iPhone web app that works offline after its first online load.
 - Docker/Nginx deployment on port `1080`.
 
