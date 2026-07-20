@@ -1,6 +1,6 @@
 # Parity Prep
 
-Parity Prep is a lightweight, local speed-drill game for practicing put-call parity and related options-market-making arithmetic. It is a static React application: it has no accounts, backend, database, or external market-data dependency.
+Parity Prep is a lightweight speed-drill game for practicing put-call parity and related options-market-making arithmetic. It is a static React application: it has no accounts, backend, database, analytics, or external market-data dependency.
 
 ## Current state
 
@@ -11,7 +11,24 @@ The app currently includes:
 - Immediate advance and scoring when a correct decimal answer is entered. Both `.27` and `0.27` are accepted.
 - An optional “Show Formula” aid and a “Show Answer” control that advances without awarding a point.
 - A results screen showing correct answers and answers revealed.
+- An installable iPhone web app that works offline after its first online load.
 - Docker/Nginx deployment on port `1080`.
+
+## Install on iPhone
+
+The hosted app is available at [https://dwydeven.github.io/put-call-parity-prep/](https://dwydeven.github.io/put-call-parity-prep/). The site is public, but all questions, answers, and scores remain on the device and are never transmitted.
+
+1. While online, open the hosted app in Safari.
+2. Tap **Share**, then **Add to Home Screen**.
+3. Turn on **Open as Web App**, then tap **Add**.
+4. Wait until the install panel says **Ready for offline use**.
+5. Launch Parity Prep from its Home Screen icon. It will now work without Wi-Fi or cellular service.
+
+When the app is opened online, it checks for a newer deployment. Updates are applied from the setup screen so an active timed round is never interrupted. If the app or its Safari website data is deleted, repeat the online installation steps to restore offline access.
+
+### Enable GitHub Pages once
+
+Repository administrators must select **Settings → Pages → Build and deployment → Source → GitHub Actions**. After that, every successful push to `master` runs the tests and publishes the production build. The deployment can also be started manually from the **Actions** tab.
 
 ## Mathematical model
 
@@ -75,6 +92,17 @@ Vite will print the local development URL, normally `http://localhost:5173`.
 ```bash
 npm test
 npm run build
+npm run verify:build
 ```
 
-The test suite covers Black–Scholes benchmark pricing, parity preservation, strike and carry bounds, question selection, and decimal-answer parsing. Docker builds run the same test suite before producing the Nginx image.
+The test suite covers Black–Scholes benchmark pricing, parity preservation, strike and carry bounds, question selection, and decimal-answer parsing. The build verifier confirms that the install manifest, icon, service worker, offline precache, and GitHub Pages-safe asset paths were generated correctly. Docker and GitHub Pages builds run both checks before producing a deployable artifact.
+
+To test offline behavior manually, serve the production `dist` directory over localhost or HTTPS, load it once while online, wait for the offline-ready status, switch the browser to offline mode, then reload and complete a round.
+
+## Security model
+
+- The hosted app contains only static files and has no server-side application surface.
+- It requests no device permissions and sends no usage data anywhere.
+- Production dependencies and deployment Actions are pinned; automated builds use the committed lockfile.
+- A restrictive content-security policy limits the app to its own scripts, styles, images, manifest, and service worker.
+- GitHub Pages is public hosting, not an authentication boundary. Do not add secrets or private data to the frontend bundle.

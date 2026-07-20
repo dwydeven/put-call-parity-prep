@@ -1,15 +1,17 @@
 :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1d2927; background: #f5f2ea; font-synthesis: none; }
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; }
+html { min-height: 100%; background: #f5f2ea; }
+body { margin: 0; min-width: 320px; min-height: 100%; overscroll-behavior-y: none; }
 button, input, select { font: inherit; }
-button { cursor: pointer; }
+button { min-height: 44px; cursor: pointer; touch-action: manipulation; }
 button:disabled { cursor: not-allowed; opacity: .42; }
-.app-shell { min-height: 100vh; display: grid; place-items: center; padding: 28px 16px; background: radial-gradient(circle at 50% 0%, #fffdf7 0, #f5f2ea 48%, #ede9df 100%); }
+.app-shell { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: radial-gradient(circle at 50% 0%, #fffdf7 0, #f5f2ea 48%, #ede9df 100%); }
 .card { width: min(100%, 620px); background: #fffefa; border: 1px solid #dad6cb; border-radius: 8px; box-shadow: 0 16px 48px rgba(38, 43, 37, .09); padding: clamp(28px, 7vw, 52px); }
 .setup-card, .results-card { max-width: 450px; }
 .eyebrow { margin: 0 0 8px; color: #73796e; font-size: .72rem; font-weight: 750; letter-spacing: .14em; }
 h1 { margin: 0; font: 600 clamp(2rem, 7vw, 3.2rem)/1.05 Georgia, "Times New Roman", serif; color: #16201e; }
 .subtitle { margin: 13px 0 32px; color: #68706c; line-height: 1.55; }
+.install-link { min-height: auto; margin: -20px 0 27px; border: 0; padding: 0; color: #1f6655; background: transparent; font-size: .82rem; font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
 fieldset { border: 0; margin: 0 0 26px; padding: 0; }
 legend, .duration { color: #3f4844; font-size: .88rem; font-weight: 700; }
 legend { margin-bottom: 10px; }
@@ -28,6 +30,10 @@ button:active { transform: translateY(1px); }
 .modal { position: relative; width: min(100%, 520px); padding: 34px; background: #fffefa; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.24); }
 .modal h2 { margin: 0 0 18px; font: 600 1.8rem Georgia, serif; }
 .modal p { color: #44504b; line-height: 1.55; }
+.install-steps { margin: 0; padding-left: 1.4rem; color: #44504b; line-height: 1.55; }
+.install-steps li + li { margin-top: 9px; }
+.offline-status { margin: 22px 0 0; padding: 11px 13px; border: 1px solid #dedcd2; border-radius: 4px; background: #f5f2ea; font-size: .87rem; }
+.offline-status.is-ready { border-color: #bad2c7; color: #185443; background: #edf6f0; }
 code { padding: 1px 4px; border-radius: 3px; background: #edf0e9; color: #185443; }
 .icon-button { position: absolute; top: 9px; right: 10px; border: 0; padding: 5px 11px; color: #59635e; background: transparent; font-size: 1.55rem; }
 .game-header { display: flex; justify-content: space-between; margin-bottom: 48px; padding-bottom: 15px; border-bottom: 1px solid #dfddd4; }
@@ -52,4 +58,4 @@ code { padding: 1px 4px; border-radius: 3px; background: #edf0e9; color: #185443
 .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 25px 0; border: 1px solid #dedcd2; background: #dedcd2; }
 .results-grid div { display: grid; gap: 7px; padding: 16px; background: #fffefa; }
 .results-grid strong { font-size: 1.45rem; }
-@media (max-width: 420px) { .card { padding: 27px 22px; } .game-header { margin-bottom: 34px; } .button-row { flex-direction: column; } .values { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .app-shell { place-items: start center; } .card { padding: 27px 22px; } .game-header { margin-bottom: 34px; } .button-row { flex-direction: column; } .values { grid-template-columns: 1fr; } .modal { max-height: calc(100dvh - 40px); overflow-y: auto; padding: 30px 25px; } }
