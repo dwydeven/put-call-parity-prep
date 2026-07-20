@@ -87,7 +87,8 @@ export function Game({ settings, finish }) {
   const change = (value) => {
     if (advancing.current) return;
     setInput(value);
-    if (!answerShown && parseCents(value) === current.answer) {
+    const parsedAnswer = parseCents(value);
+    if (!answerShown && parsedAnswer !== null && Math.abs(parsedAnswer) === Math.abs(current.answer)) {
       const nextStats = { ...stats, score: stats.score + 1, correct: stats.correct + 1, attempted: stats.attempted + 1 };
       setStats(nextStats);
       if (isQuestionRoundComplete(settings, nextStats)) finish(nextStats);

@@ -64,6 +64,22 @@ describe('setup', () => {
 });
 
 describe('game completion', () => {
+  it('accepts an unsigned answer when the correct answer is negative', async () => {
+    const finish = vi.fn();
+    generateQuestion.mockImplementationOnce(() => ({
+      title: 'Combo',
+      answer: -25,
+      answerLabel: 'Combo',
+      fields: [{ label: 'Stock', value: '$2.00' }],
+      formula: 'Combo = C − P',
+    }));
+
+    render(<Game settings={{ ...initialSettings, mode: 'questions', questionCount: 1 }} finish={finish} />);
+    fireEvent.change(screen.getByLabelText('Answer for Combo'), { target: { value: '0.25' } });
+
+    await waitFor(() => expect(finish).toHaveBeenCalledWith({ attempted: 1, correct: 1, score: 1, shown: 0 }));
+  });
+
   it('finishes a question round exactly at its selected count', async () => {
     const finish = vi.fn();
     render(<Game settings={{ ...initialSettings, mode: 'questions', questionCount: 5 }} finish={finish} />);
